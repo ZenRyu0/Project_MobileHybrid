@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AuthService {
-  static const String baseUrl = 'http://10.0.2.2:3000';
+  static const String baseUrl = 'go-fit-production-1a8c.up.railway.app';
   String? _token;
   String? _userId;
 
