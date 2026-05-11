@@ -129,7 +129,7 @@ class MyApp extends StatelessWidget {
                 inversePrimary: Color(0xFFBB86FC),
                 surfaceTint: Color(0xFF1976D2),
               ),
-              cardTheme: CardTheme(
+              cardTheme: CardThemeData(
                 color: const Color(0xFF1E1E1E),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
