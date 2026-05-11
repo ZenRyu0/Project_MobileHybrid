@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateWorkoutDto, CreateWorkoutPlanDto, WorkoutPlanDto } from './dto/workout.dto';
+import { CreateWorkoutDto, WorkoutPlanDto } from './dto/workout.dto';
 
 @Injectable()
 export class WorkoutsService {
@@ -215,21 +215,5 @@ export class WorkoutsService {
       averageCaloriesPerWorkout:
         totalWorkouts > 0 ? Math.round(totalCalories / totalWorkouts) : 0,
     };
-  }
-  
-  createWorkoutPlan(createWorkoutPlanDto: CreateWorkoutPlanDto): WorkoutPlanDto {
-    const newPlan: WorkoutPlanDto = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: createWorkoutPlanDto.name,
-      duration: createWorkoutPlanDto.duration,
-      difficulty: createWorkoutPlanDto.difficulty,
-      description: 'Custom workout routine', 
-      caloriesBurned: createWorkoutPlanDto.duration * 5,
-      exercises: createWorkoutPlanDto.exercises || [],
-    };
-
-    this.workoutPlans.push(newPlan);
-    
-    return newPlan;
   }
 }

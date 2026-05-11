@@ -1,0 +1,22 @@
+# Railway Configuration for NestJS Backend
+# File location: Project_MobileHybrid-backend/railway.json
+
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "npm run build"
+  },
+  "deploy": {
+    "startCommand": "npm run start:prod",
+    "restartPolicyMaxRetries": 5
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "PORT": "3000",
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

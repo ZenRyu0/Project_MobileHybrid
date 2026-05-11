@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { WorkoutsService } from './workouts.service';
-import { CreateWorkoutDto, CreateWorkoutPlanDto } from './dto/workout.dto';
+import { CreateWorkoutDto } from './dto/workout.dto';
 
 @Controller('workouts')
 export class WorkoutsController {
@@ -54,17 +54,6 @@ export class WorkoutsController {
     return {
       success: true,
       data: stats,
-    };
-  }
-
-  @Post('plans')
-  async createWorkoutPlan(@Body() createWorkoutPlanDto: CreateWorkoutPlanDto) {
-    const newPlan = this.workoutsService.createWorkoutPlan(createWorkoutPlanDto);
-    
-    return {
-      success: true,
-      message: 'Custom workout plan created successfully',
-      data: newPlan,
     };
   }
 }

@@ -35,12 +35,3 @@ export class UserWorkoutHistoryDto {
   caloriesBurned: number;
   difficulty: string;
 }
-
-export class CreateWorkoutPlanDto {
-  name: string;
-  duration: number;
-  difficulty: string;
-  userId: string;
-  isCustom: boolean;
-  exercises?: any[];
-}
