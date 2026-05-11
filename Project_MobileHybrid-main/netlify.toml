@@ -1,0 +1,40 @@
+# Netlify Configuration for Flutter Web App
+# File location: Project_MobileHybrid-main/netlify.toml
+
+[build]
+  # Directory to deploy (after flutter build)
+  publish = "build/web"
+  
+  # Build command
+  command = "flutter build web --release"
+  
+  # Directory containing source code
+  base = "Project_MobileHybrid-main"
+
+[build.environment]
+  # Flutter version to use
+  FLUTTER_VERSION = "3.10.0"
+  # Node version (for any JS processing)
+  NODE_VERSION = "18.16.0"
+
+# Redirect rules
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Cache rules
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/canvaskit/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
