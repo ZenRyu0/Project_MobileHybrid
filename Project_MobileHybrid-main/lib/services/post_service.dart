@@ -141,7 +141,7 @@ class PostService {
 
       return response.statusCode == 201;
     } catch (e) {
-      print('Add comment error: $e');
+      debugPrint('Add comment error: $e');
       return false;
     }
   }
@@ -161,7 +161,7 @@ class PostService {
       }
       return [];
     } catch (e) {
-      print('Get comments error: $e');
+      debugPrint('Get comments error: $e');
       return [];
     }
   }
@@ -179,7 +179,7 @@ class PostService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Delete post error: $e');
+      debugPrint('Delete post error: $e');
       return false;
     }
   }

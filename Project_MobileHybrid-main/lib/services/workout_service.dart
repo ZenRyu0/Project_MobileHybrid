@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 class WorkoutService {
   static const String baseUrl = 'go-fit-production-1a8c.up.railway.app';
@@ -19,7 +20,7 @@ class WorkoutService {
       }
       return [];
     } catch (e) {
-      print('Get workouts error: $e');
+      debugPrint('Get workouts error: $e');
       return [];
     }
   }
@@ -39,7 +40,7 @@ class WorkoutService {
       }
       return null;
     } catch (e) {
-      print('Get workout error: $e');
+      debugPrint('Get workout error: $e');
       return null;
     }
   }
@@ -68,7 +69,7 @@ class WorkoutService {
 
       return response.statusCode == 201;
     } catch (e) {
-      print('Log workout error: $e');
+      debugPrint('Log workout error: $e');
       return false;
     }
   }
@@ -88,7 +89,7 @@ class WorkoutService {
       }
       return [];
     } catch (e) {
-      print('Get workout history error: $e');
+      debugPrint('Get workout history error: $e');
       return [];
     }
   }
@@ -108,7 +109,7 @@ class WorkoutService {
       }
       return null;
     } catch (e) {
-      print('Get workout stats error: $e');
+      debugPrint('Get workout stats error: $e');
       return null;
     }
   }
@@ -136,7 +137,7 @@ class WorkoutService {
 
       return response.statusCode == 201;
     } catch (e) {
-      print('Create workout plan error: $e');
+      debugPrint('Create workout plan error: $e');
       return false;
     }
   }

@@ -7,13 +7,11 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Enable CORS for Flutter development
   app.enableCors({
     origin: '*',
     credentials: true,
   });
 
-  // Global validation pipe for DTOs
   app.useGlobalPipes(new ValidationPipe());
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {

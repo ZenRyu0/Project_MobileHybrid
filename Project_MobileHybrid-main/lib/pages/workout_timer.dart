@@ -28,7 +28,8 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
     super.initState();
     // Parse duration from string like "30 mins"
     final durationMatch = RegExp(r'(\d+)').firstMatch(widget.workoutDuration);
-    int minutes = durationMatch != null ? int.parse(durationMatch.group(1)!) : 30;
+    int minutes =
+        durationMatch != null ? int.parse(durationMatch.group(1)!) : 30;
     _totalSeconds = minutes * 60;
     _remainingSeconds = _totalSeconds;
     _sets = 3;
@@ -86,28 +87,29 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
   void _showCompletionDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Set Complete!'),
-        content: Text('You completed set $_currentSet of $_sets'),
-        actions: [
-          if (_currentSet < _sets)
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _nextSet();
-              },
-              child: const Text('Next Set'),
-            ),
-          if (_currentSet == _sets)
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context);
-              },
-              child: const Text('Complete Workout'),
-            ),
-        ],
-      ),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Set Complete!'),
+            content: Text('You completed set $_currentSet of $_sets'),
+            actions: [
+              if (_currentSet < _sets)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _nextSet();
+                  },
+                  child: const Text('Next Set'),
+                ),
+              if (_currentSet == _sets)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Complete Workout'),
+                ),
+            ],
+          ),
     );
   }
 
@@ -120,10 +122,7 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Workout Timer'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Workout Timer'), centerTitle: true),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -152,10 +151,7 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
                   const SizedBox(height: 16),
                   Text(
                     'Set $_currentSet of $_sets',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: Colors.white70,
-                    ),
+                    style: const TextStyle(fontSize: 18, color: Colors.white70),
                   ),
                 ],
               ),
@@ -165,9 +161,9 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
             Text(
               _formatTime(_remainingSeconds),
               style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
             const SizedBox(height: 48),
             // Control Buttons
@@ -192,10 +188,11 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
               ),
             ),
             const SizedBox(height: 32),
-            // Sets Adjustment
             Card(
               margin: const EdgeInsets.symmetric(horizontal: 16.0),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -203,21 +200,28 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
                   children: [
                     const Text(
                       'Adjust Sets',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          onPressed: _sets > 1 ? () => setState(() => _sets--) : null,
+                          onPressed:
+                              _sets > 1 ? () => setState(() => _sets--) : null,
                           icon: const Icon(Icons.remove_circle),
                           iconSize: 32,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         Text(
                           '$_sets Sets',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         IconButton(
                           onPressed: () => setState(() => _sets++),
@@ -248,7 +252,8 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
                     child: LinearProgressIndicator(
                       value: _currentSet / _sets,
                       minHeight: 8,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         Theme.of(context).colorScheme.primary,
                       ),
@@ -257,7 +262,9 @@ class _WorkoutTimerPageState extends State<WorkoutTimerPage> {
                   const SizedBox(height: 8),
                   Text(
                     'Completed: ${_currentSet - 1}/$_sets sets',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
