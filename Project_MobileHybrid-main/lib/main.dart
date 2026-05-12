@@ -31,23 +31,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Auth Services
         ChangeNotifierProvider(
           create: (_) => AuthProvider(AuthRepository(AuthService())),
         ),
-        // User Services
         ChangeNotifierProvider(
           create: (_) => UserProvider(UserRepository(UserService())),
         ),
-        // Workout Services
         ChangeNotifierProvider(
           create: (_) => WorkoutProvider(WorkoutRepository(WorkoutService())),
         ),
-        // Calorie Services
         ChangeNotifierProvider(
           create: (_) => CalorieProvider(CalorieRepository(CalorieService())),
         ),
-        // Post Services
         ChangeNotifierProvider(
           create: (_) => PostProvider(PostRepository(PostService())),
         ),
