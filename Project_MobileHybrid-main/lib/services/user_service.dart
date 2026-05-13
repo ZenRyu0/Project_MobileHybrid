@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class UserService {
-  static const String baseUrl = 'go-fit-production-1a8c.up.railway.app';
+  static const String baseUrl = 'https://go-fit-production-1a8c.up.railway.app';
 
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 class WorkoutService {
-  static const String baseUrl = 'go-fit-production-1a8c.up.railway.app';
+  static const String baseUrl = 'https://go-fit-production-1a8c.up.railway.app';
 
   Future<List<dynamic>> getWorkoutPlans() async {
     try {

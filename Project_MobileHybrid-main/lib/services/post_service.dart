@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class PostService {
-  static const String baseUrl = 'go-fit-production-1a8c.up.railway.app';
+  static const String baseUrl = 'https://go-fit-production-1a8c.up.railway.app';
 
   Future<Map<String, dynamic>?> getFeed({int page = 1, int limit = 10}) async {
     try {
