@@ -12,13 +12,10 @@ export class PrismaService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    try {
-      await this.client.$connect();
-      this.logger.log('Database connected successfully');
-    } catch (error) {
-      this.logger.error('Failed to connect to database', error);
-      throw error;
-    }
+    // Database connection is disabled for now because the database is not deployed yet.
+    // await this.client.$connect();
+    // this.logger.log('Database connected successfully');
+    this.logger.log('Database connection is currently disabled');
   }
 
   async enableShutdownHooks(app: INestApplication) {
