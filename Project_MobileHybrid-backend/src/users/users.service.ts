@@ -1,76 +1,159 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, UserProfileDto } from './dto/user.dto';
+import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
 export class UsersService {
-  // Mock storage - will be replaced with database
-  private users: any[] = [
-    {
-      id: '1',
-      email: 'test@example.com',
-      password: 'password123',
-      name: 'Test User',
-      bio: 'Fitness enthusiast and gym lover',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      totalWorkouts: 42,
-      totalCaloriesBurned: 15240,
-      joinedDate: '2025-01-15',
-    },
-  ];
+  constructor(private prisma: PrismaService) {}
 
-  findById(id: string): any {
-    return this.users.find((user) => user.id === id);
+  async findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        bio: true,
+        avatar: true,
+        createdAt: true,
+      },
+    });
   }
 
-  findByEmail(email: string): any {
-    return this.users.find((user) => user.email === email);
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+    });
   }
 
-  getProfile(id: string): UserProfileDto {
-    const user = this.findById(id);
-    if (!user) return null;
+  async getProfile(id: string): Promise<UserProfileDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            workouts: true,
+            posts: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Calculate total calories burned from workouts
+    const totalCaloriesBurned = await this.prisma.workout.aggregate({
+      where: { userId: id },
+      _sum: { caloriesBurned: true },
+    });
 
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       bio: user.bio || '',
-      avatar: user.avatar || 'https://i.pravatar.cc/150?img=0',
-      totalWorkouts: user.totalWorkouts || 0,
-      totalCaloriesBurned: user.totalCaloriesBurned || 0,
-      joinedDate: user.joinedDate || new Date().toISOString().split('T')[0],
+      avatar: user.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+      totalWorkouts: user._count.workouts,
+      totalCaloriesBurned: totalCaloriesBurned._sum.caloriesBurned || 0,
+      joinedDate: user.createdAt.toISOString().split('T')[0],
     };
   }
 
-  updateProfile(id: string, updateDto: UpdateUserDto): UserProfileDto {
-    const user = this.findById(id);
-    if (!user) return null;
+  async updateProfile(id: string, updateDto: UpdateUserDto): Promise<UserProfileDto> {
+    await this.prisma.user.findUnique({
+      where: { id },
+    });
 
-    Object.assign(user, updateDto);
+    await this.prisma.user.update({
+      where: { id },
+      data: updateDto,
+    });
+
     return this.getProfile(id);
   }
 
-  getAllUsers(): any[] {
-    return this.users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatar: user.avatar,
-    }));
+  async getAllUsers() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+      },
+    });
   }
 
-  create(createUserDto: CreateUserDto): any {
-    const newUser = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...createUserDto,
-      bio: '',
-      avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70),
-      totalWorkouts: 0,
-      totalCaloriesBurned: 0,
-      joinedDate: new Date().toISOString().split('T')[0],
-    };
+  async create(createUserDto: CreateUserDto) {
+    return this.prisma.user.create({
+      data: createUserDto,
+    });
+  }
 
-    this.users.push(newUser);
-    return newUser;
+  async searchUsers(query: string, skip: number = 0, take: number = 10) {
+    // Search by name or email (case-insensitive)
+    const users = await this.prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { email: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        bio: true,
+        createdAt: true,
+      },
+      skip,
+      take,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const total = await this.prisma.user.count({
+      where: {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { email: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+    });
+
+    return {
+      users,
+      total,
+      page: Math.floor(skip / take) + 1,
+      limit: take,
+      hasMore: skip + take < total,
+    };
+  }
+
+  async deleteAccount(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Cascading deletes will remove:
+    // - All workouts
+    // - All calorie entries
+    // - All posts
+    // - All comments
+    // - All post likes
+    // - Daily calorie target
+    return this.prisma.user.delete({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
   }
 }

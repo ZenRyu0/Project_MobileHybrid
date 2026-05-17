@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Put, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto, UserProfileDto } from './dto/user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -10,60 +12,72 @@ export class UsersController {
   async getAllUsers() {
     return {
       success: true,
-      data: this.usersService.getAllUsers(),
+      data: await this.usersService.getAllUsers(),
     };
   }
 
-  @Get(':id/profile')
-  async getProfile(@Param('id') id: string): Promise<any> {
-    const profile = this.usersService.getProfile(id);
-    if (!profile) {
+  @Get('search')
+  async searchUsers(
+    @Query('q') query: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ) {
+    if (!query || query.trim().length < 2) {
       return {
         success: false,
-        message: 'User not found',
+        message: 'Search query must be at least 2 characters',
+        data: { users: [], total: 0 },
       };
     }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const result = await this.usersService.searchUsers(query, skip, parseInt(limit));
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Get('profile/me')
+  @UseGuards(JwtAuthGuard)
+  async getMyProfile(@CurrentUser() user: any): Promise<any> {
+    const profile = await this.usersService.getProfile(user.id);
     return {
       success: true,
       data: profile,
     };
   }
 
-  @Put(':id/profile')
-  async updateProfile(
-    @Param('id') id: string,
+  @Get(':id/profile')
+  async getProfile(@Param('id') id: string): Promise<any> {
+    const profile = await this.usersService.getProfile(id);
+    return {
+      success: true,
+      data: profile,
+    };
+  }
+
+  @Put('profile/me')
+  @UseGuards(JwtAuthGuard)
+  async updateMyProfile(
+    @CurrentUser() user: any,
     @Body() updateDto: UpdateUserDto,
   ): Promise<any> {
-    const updated = this.usersService.updateProfile(id, updateDto);
-    if (!updated) {
-      return {
-        success: false,
-        message: 'User not found',
-      };
-    }
+    const updated = await this.usersService.updateProfile(user.id, updateDto);
     return {
       success: true,
       data: updated,
     };
   }
 
-  @Get(':id')
-  async getUserById(@Param('id') id: string): Promise<any> {
-    const user = this.usersService.findById(id);
-    if (!user) {
-      return {
-        success: false,
-        message: 'User not found',
-      };
-    }
+  @Delete('profile/me')
+  @UseGuards(JwtAuthGuard)
+  async deleteMyAccount(@CurrentUser() user: any) {
+    await this.usersService.deleteAccount(user.id);
     return {
       success: true,
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-      },
+      message: 'Account deleted successfully. All data has been permanently removed.',
     };
   }
 }

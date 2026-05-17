@@ -63,7 +63,7 @@ class _FitnessPageState extends State<FitnessPage> {
                     Icons.fitness_center,
                     plan,
                   );
-                }).toList(),
+                }),
             ],
           );
         },

@@ -29,3 +29,5 @@ out/
 
 # Others
 *.tsbuildinfo
+
+/src/generated/prisma

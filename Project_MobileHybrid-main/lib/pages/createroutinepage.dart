@@ -169,8 +169,6 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
       exercises: _selectedExercises,
     );
 
-    if (context.mounted) Navigator.pop(context);
-
     if (success && mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -227,7 +225,7 @@ class _CreateRoutinePageState extends State<CreateRoutinePage> {
                     Expanded(
                       flex: 2,
                       child: DropdownButtonFormField<String>(
-                        value: _selectedDifficulty,
+                        initialValue: _selectedDifficulty,
                         decoration: InputDecoration(
                           labelText: 'Difficulty',
                           border: OutlineInputBorder(

@@ -1,14 +1,17 @@
-import { Controller, Get, Post, Put, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { CaloriesService } from './calories.service';
 import { LogMealDto, DailyCalorieTargetDto } from './dto/calorie.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('calories')
 export class CaloriesController {
   constructor(private caloriesService: CaloriesService) {}
 
   @Post('log-meal')
-  async logMeal(@Body() logMealDto: LogMealDto) {
-    const meal = this.caloriesService.logMeal(logMealDto);
+  @UseGuards(JwtAuthGuard)
+  async logMeal(@CurrentUser() user: any, @Body() logMealDto: LogMealDto) {
+    const meal = await this.caloriesService.logMeal(user.id, logMealDto);
     return {
       success: true,
       message: 'Meal logged successfully',
@@ -17,16 +20,37 @@ export class CaloriesController {
   }
 
   @Put('target')
-  async setDailyTarget(@Body() targetDto: DailyCalorieTargetDto) {
-    return this.caloriesService.setDailyTarget(targetDto.userId, targetDto.dailyTarget);
+  @UseGuards(JwtAuthGuard)
+  async setDailyTarget(@CurrentUser() user: any, @Body() targetDto: DailyCalorieTargetDto) {
+    return this.caloriesService.setDailyTarget(user.id, targetDto.dailyTarget);
+  }
+
+  @Get('daily-stats/me')
+  @UseGuards(JwtAuthGuard)
+  async getMyDailyStats(@CurrentUser() user: any) {
+    const stats = await this.caloriesService.getDailyStats(user.id);
+    return {
+      success: true,
+      data: stats,
+    };
   }
 
   @Get('daily-stats/:userId')
   async getDailyStats(@Param('userId') userId: string) {
-    const stats = this.caloriesService.getDailyStats(userId);
+    const stats = await this.caloriesService.getDailyStats(userId);
     return {
       success: true,
       data: stats,
+    };
+  }
+
+  @Get('history/me')
+  @UseGuards(JwtAuthGuard)
+  async getMyCalorieHistory(@CurrentUser() user: any) {
+    const history = await this.caloriesService.getCalorieHistory(user.id);
+    return {
+      success: true,
+      data: history,
     };
   }
 
@@ -34,19 +58,39 @@ export class CaloriesController {
   async getCalorieHistory(
     @Param('userId') userId: string,
   ) {
-    const history = this.caloriesService.getCalorieHistory(userId);
+    const history = await this.caloriesService.getCalorieHistory(userId);
     return {
       success: true,
       data: history,
     };
   }
 
-  @Get('stats/:userId')
-  async getTotalStats(@Param('userId') userId: string) {
-    const stats = this.caloriesService.getTotalStats(userId);
+  @Get('stats/me')
+  @UseGuards(JwtAuthGuard)
+  async getMyTotalStats(@CurrentUser() user: any) {
+    const stats = await this.caloriesService.getTotalStats(user.id);
     return {
       success: true,
       data: stats,
+    };
+  }
+
+  @Get('stats/:userId')
+  async getTotalStats(@Param('userId') userId: string) {
+    const stats = await this.caloriesService.getTotalStats(userId);
+    return {
+      success: true,
+      data: stats,
+    };
+  }
+
+  @Delete('meals/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteMeal(@CurrentUser() user: any, @Param('id') id: string) {
+    await this.caloriesService.deleteMeal(id, user.id);
+    return {
+      success: true,
+      message: 'Meal deleted successfully',
     };
   }
 }

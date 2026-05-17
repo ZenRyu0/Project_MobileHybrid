@@ -1,56 +1,100 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto, RegisterDto, AuthResponseDto } from './dto/auth.dto';
+import { PrismaService } from '../database/prisma.service';
+import { logger } from '../common/logger/winston.logger';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private prisma: PrismaService,
+  ) {}
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    // Temporary: hardcoded user for demo
-    // In production, validate against database
-    if (
-      loginDto.email === 'test@example.com' &&
-      loginDto.password === 'password123'
-    ) {
-      const user = {
-        id: '1',
-        email: loginDto.email,
-        name: 'Test User',
-      };
+    const user = await this.prisma.user.findUnique({
+      where: { email: loginDto.email },
+    });
 
-      const token = this.jwtService.sign({ sub: user.id, email: user.email });
-
-      return {
-        success: true,
-        message: 'Login successful',
-        token,
-        user,
-      };
+    if (!user) {
+      logger.warn('Login failed - user not found', { email: loginDto.email });
+      throw new UnauthorizedException('Invalid email or password');
     }
 
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      logger.warn('Login failed - invalid password', { userId: user.id, email: loginDto.email });
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const token = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+    });
+
+    logger.info('User login successful', { userId: user.id, email: user.email });
+
     return {
-      success: false,
-      message: 'Invalid email or password',
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
     };
   }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    // Temporary: accept any registration for demo
-    // In production, validate email uniqueness and store in database
-    const user = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: registerDto.email,
-      name: registerDto.name || 'New User',
-    };
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: registerDto.email },
+    });
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
+    if (existingUser) {
+      logger.warn('Registration failed - email already registered', { email: registerDto.email });
+      throw new BadRequestException('Email already registered');
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(registerDto.password, 10);
+
+    // Create user
+    const user = await this.prisma.user.create({
+      data: {
+        email: registerDto.email,
+        passwordHash,
+        name: registerDto.name || 'New User',
+        dailyCalorieTarget: {
+          create: {
+            target: 2000,
+          },
+        },
+      },
+    });
+
+    const token = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+    });
+
+    logger.info('User registration successful', { userId: user.id, email: user.email });
 
     return {
       success: true,
       message: 'Registration successful',
       token,
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
     };
   }
 
@@ -58,7 +102,10 @@ export class AuthService {
     try {
       return this.jwtService.verify(token);
     } catch (error) {
+      logger.warn('Token validation failed', { error: error.message });
       return null;
     }
   }
 }
+
+

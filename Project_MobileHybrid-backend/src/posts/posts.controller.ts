@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Delete, Param, Body, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PostsService } from './posts.service';
-import { CreatePostDto } from './dto/post.dto';
+import { CreatePostDto, AddCommentDto } from './dto/post.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('posts')
 export class PostsController {
@@ -11,7 +13,7 @@ export class PostsController {
 
   @Get('feed')
   async getFeed(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-    const feedData = this.postsService.getFeed(page, limit);
+    const feedData = await this.postsService.getFeed(page, limit);
     return {
       success: true,
       data: feedData,
@@ -19,6 +21,7 @@ export class PostsController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file', {
      storage: diskStorage({
       destination: './uploads',
@@ -28,13 +31,17 @@ export class PostsController {
       }
     })
   }))
-  async createPost(@Body() createPostDto: any,
+  async createPost(@CurrentUser() user: any, @Body() createPostDto: CreatePostDto,
     @UploadedFile() file?: Express.Multer.File
   ) {
     if (file) {
-      createPostDto.imageUrl = `http://10.0.2.2:3000/uploads/${file.filename}`;
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+      const host = process.env.NODE_ENV === 'production'
+        ? 'go-fit-production-1a8c.up.railway.app'
+        : 'localhost:3000';
+      createPostDto.imageUrl = `${protocol}://${host}/uploads/${file.filename}`;
     }
-    const post = this.postsService.createPost(createPostDto);
+    const post = await this.postsService.createPost(user.id, createPostDto);
     return {
       success: true,
       message: 'Post created successfully',
@@ -44,13 +51,7 @@ export class PostsController {
 
   @Get(':id')
   async getPostById(@Param('id') id: string) {
-    const post = this.postsService.getPostById(id);
-    if (!post) {
-      return {
-        success: false,
-        message: 'Post not found',
-      };
-    }
+    const post = await this.postsService.getPostById(id);
     return {
       success: true,
       data: post,
@@ -58,14 +59,9 @@ export class PostsController {
   }
 
   @Post(':id/like')
-  async likePost(@Param('id') postId: string, @Body() { userId }: any) {
-    const post = this.postsService.likePost(postId, userId);
-    if (!post) {
-      return {
-        success: false,
-        message: 'Post not found',
-      };
-    }
+  @UseGuards(JwtAuthGuard)
+  async likePost(@CurrentUser() user: any, @Param('id') postId: string) {
+    const post = await this.postsService.likePost(postId, user.id);
     return {
       success: true,
       data: post,
@@ -73,14 +69,9 @@ export class PostsController {
   }
 
   @Post(':id/unlike')
-  async unlikePost(@Param('id') postId: string, @Body() { userId }: any) {
-    const post = this.postsService.unlikePost(postId, userId);
-    if (!post) {
-      return {
-        success: false,
-        message: 'Post not found',
-      };
-    }
+  @UseGuards(JwtAuthGuard)
+  async unlikePost(@CurrentUser() user: any, @Param('id') postId: string) {
+    const post = await this.postsService.unlikePost(postId, user.id);
     return {
       success: true,
       data: post,
@@ -88,17 +79,13 @@ export class PostsController {
   }
 
   @Post(':id/comments')
+  @UseGuards(JwtAuthGuard)
   async addComment(
+    @CurrentUser() user: any,
     @Param('id') postId: string,
-    @Body() { userId, content, username }: any,
+    @Body() commentDto: AddCommentDto,
   ) {
-    const comment = this.postsService.addComment(postId, userId, content, username);
-    if (!comment) {
-      return {
-        success: false,
-        message: 'Post not found',
-      };
-    }
+    const comment = await this.postsService.addComment(postId, user.id, commentDto.content);
     return {
       success: true,
       data: comment,
@@ -107,7 +94,7 @@ export class PostsController {
 
   @Get(':id/comments')
   async getPostComments(@Param('id') postId: string) {
-    const comments = this.postsService.getPostComments(postId);
+    const comments = await this.postsService.getPostComments(postId);
     return {
       success: true,
       data: comments,
@@ -115,17 +102,23 @@ export class PostsController {
   }
 
   @Delete(':id')
-  async deletePost(@Param('id') id: string, @Body() { userId }: any) {
-    const deleted = this.postsService.deletePost(id, userId);
-    if (!deleted) {
-      return {
-        success: false,
-        message: 'Post not found or unauthorized',
-      };
-    }
+  @UseGuards(JwtAuthGuard)
+  async deletePost(@CurrentUser() user: any, @Param('id') id: string) {
+    await this.postsService.deletePost(id, user.id);
     return {
       success: true,
       message: 'Post deleted successfully',
     };
   }
+
+  @Delete(':id/comments/:commentId')
+  @UseGuards(JwtAuthGuard)
+  async deleteComment(@CurrentUser() user: any, @Param('commentId') commentId: string) {
+    await this.postsService.deleteComment(commentId, user.id);
+    return {
+      success: true,
+      message: 'Comment deleted successfully',
+    };
+  }
 }
+

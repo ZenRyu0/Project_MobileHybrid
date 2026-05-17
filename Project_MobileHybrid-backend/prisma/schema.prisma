@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model for authentication
+model User {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  passwordHash          String
+  name                  String
+  bio                   String?
+  avatar                String?
+  emailVerified         Boolean                @default(false)
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+
+  // Relations
+  workouts              Workout[]
+  calorieEntries        CalorieEntry[]
+  dailyCalorieTarget    DailyCalorieTarget?
+  posts                 Post[]
+  comments              Comment[]
+  postLikes             PostLike[]
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+// Workout history - individual workout logs
+model Workout {
+  id                    String                 @id @default(uuid())
+  userId                String
+  name                  String
+  duration              Int                    // in minutes
+  difficulty           String                 // Beginner, Intermediate, Advanced
+  caloriesBurned        Int
+  date                  String                 // ISO date format
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
+}
+
+// Pre-built workout plans and custom routines
+model WorkoutPlan {
+  id                    String                 @id @default(uuid())
+  name                  String
+  duration              Int                    // in minutes
+  difficulty           String
+  description           String
+  exercises             Json                   // Array of exercise objects
+  caloriesBurned        Int
+  isCustom              Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@index([createdAt])
+}
+
+// Meal log for calorie tracking
+model CalorieEntry {
+  id                    String                 @id @default(uuid())
+  userId                String
+  mealType              String                 // Breakfast, Lunch, Dinner, Snack
+  foodName              String
+  calories              Int
+  protein               Float?                 // in grams
+  carbs                 Float?                 // in grams
+  fat                   Float?                 // in grams
+  date                  String                 // ISO date format
+  timestamp             DateTime               @default(now())
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
+  @@index([userId, date])
+}
+
+// Daily calorie target for each user
+model DailyCalorieTarget {
+  id                    String                 @id @default(uuid())
+  userId                String                 @unique
+  target                Int                    @default(2000)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Social feed posts
+model Post {
+  id                    String                 @id @default(uuid())
+  userId                String
+  content               String
+  imageUrl              String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments              Comment[]
+  likes                 PostLike[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Comments on posts
+model Comment {
+  id                    String                 @id @default(uuid())
+  postId                String
+  userId                String
+  content               String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  post                  Post                   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+}
+
+// Many-to-many relationship for post likes
+model PostLike {
+  id                    String                 @id @default(uuid())
+  userId                String
+  postId                String
+  createdAt             DateTime               @default(now())
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post                  Post                   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+}

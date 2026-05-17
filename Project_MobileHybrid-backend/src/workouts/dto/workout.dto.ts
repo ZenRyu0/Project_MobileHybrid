@@ -1,10 +1,30 @@
+import { IsString, IsNumber, IsEnum, IsArray, IsOptional, Min, Max, MinLength, MaxLength } from 'class-validator';
+
 export class CreateWorkoutDto {
-  userId: string;
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
   name: string;
-  duration: number; // in minutes
+
+  @IsNumber()
+  @Min(1)
+  @Max(480)
+  duration: number;
+
+  @IsNumber()
+  @Min(0)
   caloriesBurned: number;
+
+  @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+
+  @IsArray()
+  @IsString({ each: true })
   exercises: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   notes?: string;
 }
 
@@ -19,11 +39,30 @@ export class WorkoutPlanDto {
 }
 
 export class ExerciseDto {
+  @IsString()
   name: string;
+
+  @IsNumber()
+  @Min(1)
   sets: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
   reps?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
   duration?: number;
+
+  @IsOptional()
+  @IsString()
   videoUrl?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   caloriesBurned?: number;
 }
 
@@ -37,10 +76,20 @@ export class UserWorkoutHistoryDto {
 }
 
 export class CreateWorkoutPlanDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
   name: string;
+
+  @IsNumber()
+  @Min(1)
+  @Max(480)
   duration: number;
+
+  @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
   difficulty: string;
-  userId: string;
-  isCustom: boolean;
+
+  @IsOptional()
+  @IsArray()
   exercises?: any[];
 }
