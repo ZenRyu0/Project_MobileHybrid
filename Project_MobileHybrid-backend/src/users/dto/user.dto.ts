@@ -51,3 +51,9 @@ export class UserProfileDto {
   joinedDate: string;
 }
 
+// Internal DTO for creating users with hashed password
+export class InternalCreateUserDto {
+  email: string;
+  passwordHash: string;
+  name: string;
+}

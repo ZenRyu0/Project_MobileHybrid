@@ -34,7 +34,7 @@ export class WorkoutPlanDto {
   duration: number;
   difficulty: string;
   description: string;
-  exercises: ExerciseDto[];
+  exercises: any[];
   caloriesBurned: number;
 }
 
@@ -88,6 +88,11 @@ export class CreateWorkoutPlanDto {
 
   @IsEnum(['Beginner', 'Intermediate', 'Advanced'])
   difficulty: string;
+
+  @IsString()
+  @MinLength(5)
+  @MaxLength(500)
+  description: string;
 
   @IsOptional()
   @IsArray()

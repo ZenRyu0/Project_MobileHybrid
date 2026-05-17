@@ -7,7 +7,11 @@ export class WorkoutsService {
   constructor(private prisma: PrismaService) {}
 
   async getWorkoutPlans(): Promise<WorkoutPlanDto[]> {
-    return this.prisma.workoutPlan.findMany();
+    const plans = await this.prisma.workoutPlan.findMany();
+    return plans.map((plan) => ({
+      ...plan,
+      exercises: (Array.isArray(plan.exercises) ? plan.exercises : []) as any[],
+    }));
   }
 
   async getWorkoutPlanById(id: string): Promise<WorkoutPlanDto> {
@@ -19,7 +23,10 @@ export class WorkoutsService {
       throw new NotFoundException('Workout plan not found');
     }
 
-    return plan as WorkoutPlanDto;
+    return {
+      ...plan,
+      exercises: (Array.isArray(plan.exercises) ? plan.exercises : []) as any[],
+    };
   }
 
   async logWorkout(userId: string, createWorkoutDto: CreateWorkoutDto) {
@@ -60,13 +67,21 @@ export class WorkoutsService {
   async createWorkoutPlan(
     createWorkoutPlanDto: CreateWorkoutPlanDto,
   ): Promise<WorkoutPlanDto> {
-    return this.prisma.workoutPlan.create({
+    const plan = await this.prisma.workoutPlan.create({
       data: {
-        ...createWorkoutPlanDto,
+        name: createWorkoutPlanDto.name,
+        duration: createWorkoutPlanDto.duration,
+        difficulty: createWorkoutPlanDto.difficulty,
+        description: createWorkoutPlanDto.description,
         caloriesBurned: createWorkoutPlanDto.duration * 5,
         exercises: createWorkoutPlanDto.exercises || [],
       },
-    }) as Promise<WorkoutPlanDto>;
+    });
+
+    return {
+      ...plan,
+      exercises: (Array.isArray(plan.exercises) ? plan.exercises : []) as any[],
+    };
   }
 
   async deleteWorkout(id: string, userId: string) {

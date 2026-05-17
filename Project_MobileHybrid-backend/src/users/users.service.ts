@@ -85,9 +85,13 @@ export class UsersService {
     });
   }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto & { passwordHash: string }) {
     return this.prisma.user.create({
-      data: createUserDto,
+      data: {
+        email: createUserDto.email,
+        name: createUserDto.name,
+        passwordHash: createUserDto.passwordHash,
+      },
     });
   }
 
