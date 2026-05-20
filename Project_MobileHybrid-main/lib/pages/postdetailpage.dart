@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/post.dart';
 import '../providers/post_provider.dart';
+import '../providers/auth_provider.dart';
 import 'feedpage.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -73,15 +74,16 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       TweetPostItem(
                         post: currentPost,
                         onLikeTapped: () {
+                          final userId = '1'; // TODO: Get from AuthProvider when userId is stored
                           if (currentPost.isLiked) {
                             postProvider.unlikePost(
                               postId: currentPost.id,
-                              userId: '1',
+                              userId: userId,
                             );
                           } else {
                             postProvider.likePost(
                               postId: currentPost.id,
-                              userId: '1',
+                              userId: userId,
                             );
                           }
                         },
@@ -170,11 +172,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       color: Theme.of(context).colorScheme.primary,
                       onPressed: () async {
                         if (_commentController.text.isNotEmpty) {
+                          final userId = '1'; // TODO: Get from AuthProvider when userId is stored
+                          final userName = context.read<AuthProvider>().userEmail.split('@')[0];
                           await postProvider.addComment(
                             postId: currentPost.id,
-                            userId: '1',
+                            userId: userId,
                             content: _commentController.text,
-                            username: 'MyUser',
+                            username: userName,
                           );
                           _commentController.clear();
 

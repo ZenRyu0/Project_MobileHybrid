@@ -5,6 +5,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:provider/provider.dart';
 import '../models/post.dart';
 import '../providers/post_provider.dart';
+import '../providers/auth_provider.dart';
 import 'postdetailpage.dart';
 
 class FeedPage extends StatefulWidget {
@@ -79,15 +80,16 @@ class _MainPostState extends State<FeedPage> {
                 child: TweetPostItem(
                   post: currentPost,
                   onLikeTapped: () {
+                    final userId = '1'; // TODO: Get from AuthProvider when userId is stored
                     if (postData['liked'] == true) {
                       postProvider.unlikePost(
                         postId: postData['id'].toString(),
-                        userId: '1',
+                        userId: userId,
                       );
                     } else {
                       postProvider.likePost(
                         postId: postData['id'].toString(),
-                        userId: '1',
+                        userId: userId,
                       );
                     }
                   },
@@ -114,104 +116,123 @@ class _MainPostState extends State<FeedPage> {
 }
 
 void _showCreatePostSheet(BuildContext context) {
-  final TextEditingController contentController = TextEditingController();
-  File? selectedImage;
-  final ImagePicker picker = ImagePicker();
-
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder:
-        (context) => StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 16,
-                right: 16,
-                top: 16,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: contentController,
-                    autofocus: true,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      hintText: "Share your workout...",
-                      border: InputBorder.none,
-                    ),
-                  ),
-
-                  if (selectedImage != null) ...[
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            selectedImage!,
-                            height: 150,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white),
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.black54,
-                            ),
-                            onPressed:
-                                () => setState(() => selectedImage = null),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.photo_library,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        onPressed: () async {
-                          final XFile? image = await picker.pickImage(
-                            source: ImageSource.gallery,
-                          );
-                          if (image != null) {
-                            setState(() => selectedImage = File(image.path));
-                          }
-                        },
-                      ),
-                      ElevatedButton(
-                        onPressed: () async {
-                          if (contentController.text.isNotEmpty) {
-                            await context.read<PostProvider>().createPost(
-                              userId: '1', // Hardcoded for now
-                              content: contentController.text,
-                              imageFile: selectedImage,
-                            );
-                            if (context.mounted) Navigator.pop(context);
-                          }
-                        },
-                        child: const Text('Post'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            );
-          },
-        ),
+    builder: (context) => const _CreatePostSheet(),
   );
+}
+
+class _CreatePostSheet extends StatefulWidget {
+  const _CreatePostSheet();
+
+  @override
+  State<_CreatePostSheet> createState() => _CreatePostSheetState();
+}
+
+class _CreatePostSheetState extends State<_CreatePostSheet> {
+  late TextEditingController contentController;
+  File? selectedImage;
+  final ImagePicker picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    contentController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    contentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: contentController,
+            autofocus: true,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              hintText: "Share your workout...",
+              border: InputBorder.none,
+            ),
+          ),
+          if (selectedImage != null) ...[
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    selectedImage!,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black54,
+                    ),
+                    onPressed: () => setState(() => selectedImage = null),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.photo_library,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () async {
+                  final XFile? image = await picker.pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (image != null) {
+                    setState(() => selectedImage = File(image.path));
+                  }
+                },
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (contentController.text.isNotEmpty) {
+                    final userId = '1'; // TODO: Get from AuthProvider when userId is stored
+                    await context.read<PostProvider>().createPost(
+                      userId: userId,
+                      content: contentController.text,
+                      imageFile: selectedImage,
+                    );
+                    if (mounted) Navigator.pop(context);
+                  }
+                },
+                child: const Text('Post'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
 }
 
 class TweetPostItem extends StatelessWidget {
@@ -303,6 +324,34 @@ class TweetPostItem extends StatelessWidget {
                       width: double.infinity,
                       height: 200,
                       fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          width: double.infinity,
+                          height: 200,
+                          color: Colors.grey[300],
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: double.infinity,
+                          height: 200,
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.broken_image,
+                            color: Colors.grey[600],
+                            size: 48,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -320,7 +369,8 @@ class TweetPostItem extends StatelessWidget {
                       post.isSaved ? Icons.bookmark : Icons.bookmark_border,
                       post.saves.toString(),
                       () {
-                        context.read<PostProvider>().toggleSave(post.id, '1');
+                        final userId = '1'; // TODO: Get from AuthProvider when userId is stored
+                        context.read<PostProvider>().toggleSave(post.id, userId);
                       },
                       Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

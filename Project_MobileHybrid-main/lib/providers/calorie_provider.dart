@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/food_result.dart';
 import '../repositories/calorie_repository.dart';
 
 class CalorieProvider extends ChangeNotifier {
@@ -7,11 +8,15 @@ class CalorieProvider extends ChangeNotifier {
   CalorieProvider(this._calorieRepository);
 
   Map<String, dynamic>? _dailyStats;
+  List<FoodResult> _foodSearchResults = [];
   bool _isLoading = false;
+  bool _isSearching = false;
   String _errorMessage = '';
 
   Map<String, dynamic>? get dailyStats => _dailyStats;
+  List<FoodResult> get foodSearchResults => _foodSearchResults;
   bool get isLoading => _isLoading;
+  bool get isSearching => _isSearching;
   String get errorMessage => _errorMessage;
 
   Future<void> fetchDailyStats(String userId) async {
@@ -28,14 +33,33 @@ class CalorieProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> searchFoods(String query) async {
+    if (query.isEmpty) {
+      _foodSearchResults = [];
+      notifyListeners();
+      return;
+    }
+
+    _setSearching(true);
+    _setError('');
+
+    try {
+      final results = await _calorieRepository.searchFoods(query);
+      _foodSearchResults = results;
+    } catch (e) {
+      _setError('Error searching foods: $e');
+      _foodSearchResults = [];
+    } finally {
+      _setSearching(false);
+    }
+  }
+
   Future<bool> logMeal({
     required String userId,
     required String mealType,
-    required String foodName,
-    required int calories,
-    int? protein,
-    int? carbs,
-    int? fat,
+    required String foodQuery,
+    required int servingSize,
+    String? fdsId,
   }) async {
     _setLoading(true);
     _setError('');
@@ -44,15 +68,14 @@ class CalorieProvider extends ChangeNotifier {
       final success = await _calorieRepository.logMeal(
         userId: userId,
         mealType: mealType,
-        foodName: foodName,
-        calories: calories,
-        protein: protein,
-        carbs: carbs,
-        fat: fat,
+        foodQuery: foodQuery,
+        servingSize: servingSize,
+        fdsId: fdsId,
       );
 
       if (success) {
         await fetchDailyStats(userId);
+        _foodSearchResults = [];
       } else {
         _setError('Failed to log meal');
       }
@@ -82,6 +105,11 @@ class CalorieProvider extends ChangeNotifier {
 
   void _setLoading(bool value) {
     _isLoading = value;
+    notifyListeners();
+  }
+
+  void _setSearching(bool value) {
+    _isSearching = value;
     notifyListeners();
   }
 

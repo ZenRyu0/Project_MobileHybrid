@@ -30,8 +30,10 @@ export class UsersController {
       };
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const result = await this.usersService.searchUsers(query, skip, parseInt(limit));
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, Math.min(parseInt(limit) || 10, 100));
+    const skip = (pageNum - 1) * limitNum;
+    const result = await this.usersService.searchUsers(query, skip, limitNum);
 
     return {
       success: true,

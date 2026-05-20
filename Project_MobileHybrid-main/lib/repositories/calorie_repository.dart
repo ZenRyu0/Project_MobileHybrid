@@ -1,3 +1,4 @@
+import '../models/food_result.dart';
 import '../services/calorie_service.dart';
 
 class CalorieRepository {
@@ -5,23 +6,23 @@ class CalorieRepository {
 
   CalorieRepository(this._calorieService);
 
+  Future<List<FoodResult>> searchFoods(String query) {
+    return _calorieService.searchFoods(query);
+  }
+
   Future<bool> logMeal({
     required String userId,
     required String mealType,
-    required String foodName,
-    required int calories,
-    int? protein,
-    int? carbs,
-    int? fat,
+    required String foodQuery,
+    required int servingSize,
+    String? fdsId,
   }) {
     return _calorieService.logMeal(
       userId: userId,
       mealType: mealType,
-      foodName: foodName,
-      calories: calories,
-      protein: protein,
-      carbs: carbs,
-      fat: fat,
+      foodQuery: foodQuery,
+      servingSize: servingSize,
+      fdsId: fdsId,
     );
   }
 

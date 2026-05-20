@@ -47,13 +47,15 @@ export class WorkoutsService {
   }
 
   async getWorkoutStats(userId: string) {
-    const workouts = await this.prisma.workout.findMany({
+    const stats = await this.prisma.workout.aggregate({
       where: { userId },
+      _count: true,
+      _sum: { caloriesBurned: true, duration: true },
     });
 
-    const totalWorkouts = workouts.length;
-    const totalCalories = workouts.reduce((sum, w) => sum + w.caloriesBurned, 0);
-    const totalDuration = workouts.reduce((sum, w) => sum + w.duration, 0);
+    const totalWorkouts = stats._count;
+    const totalCalories = stats._sum.caloriesBurned || 0;
+    const totalDuration = stats._sum.duration || 0;
 
     return {
       totalWorkouts,

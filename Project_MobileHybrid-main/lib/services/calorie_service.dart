@@ -1,31 +1,52 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../models/food_result.dart';
 
 class CalorieService {
   static const String baseUrl = 'https://go-fit-production-1a8c.up.railway.app';
 
+  Future<List<FoodResult>> searchFoods(String query) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/calories/search-foods?query=$query'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      debugPrint('Search foods response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['data'] != null) {
+          final foods = (data['data'] as List<dynamic>)
+              .map((f) => FoodResult.fromJson(f))
+              .toList();
+          return foods;
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Search foods error: $e');
+      return [];
+    }
+  }
+
   Future<bool> logMeal({
     required String userId,
     required String mealType,
-    required String foodName,
-    required int calories,
-    int? protein,
-    int? carbs,
-    int? fat,
+    required String foodQuery,
+    required int servingSize,
+    String? fdsId,
   }) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/calories/log-meal'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'userId': userId,
           'mealType': mealType,
-          'foodName': foodName,
-          'calories': calories,
-          'protein': protein,
-          'carbs': carbs,
-          'fat': fat,
+          'foodQuery': foodQuery,
+          'servingSize': servingSize,
+          'fdsId': fdsId,
         }),
       );
 
@@ -115,3 +136,4 @@ class CalorieService {
     }
   }
 }
+

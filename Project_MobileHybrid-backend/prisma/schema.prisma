@@ -79,6 +79,9 @@ model CalorieEntry {
   protein               Float?                 // in grams
   carbs                 Float?                 // in grams
   fat                   Float?                 // in grams
+  fdsId                 String?                // USDA FoodData Central ID
+  servingSize           Int?                   // in grams
+  foodQuery             String?                // original user search term
   date                  String                 // ISO date format
   timestamp             DateTime               @default(now())
   createdAt             DateTime               @default(now())

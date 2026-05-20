@@ -1,16 +1,42 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { LogMealDto, DailyCalorieTargetDto, DailyCalorieStatsDto } from './dto/calorie.dto';
 import { PrismaService } from '../database/prisma.service';
+import { FoodSearchService } from '../foods/food-search.service';
 
 @Injectable()
 export class CaloriesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private foodSearchService: FoodSearchService,
+  ) {}
 
   async logMeal(userId: string, logMealDto: LogMealDto) {
+    const foods = await this.foodSearchService.searchFoods(logMealDto.foodQuery, 1);
+
+    if (!foods || foods.length === 0) {
+      throw new NotFoundException('Food not found in database');
+    }
+
+    const food = foods[0];
+    const servingSizeMultiplier = logMealDto.servingSize / 100;
+
+    const calories = Math.round(food.caloriesPer100g * servingSizeMultiplier);
+    const protein = Math.round(food.protein * servingSizeMultiplier * 10) / 10;
+    const carbs = Math.round(food.carbs * servingSizeMultiplier * 10) / 10;
+    const fat = Math.round(food.fat * servingSizeMultiplier * 10) / 10;
+
     return this.prisma.calorieEntry.create({
       data: {
-        ...logMealDto,
         userId,
+        mealType: logMealDto.mealType,
+        foodName: food.description,
+        calories,
+        protein,
+        carbs,
+        fat,
+        fdsId: logMealDto.fdsId || food.fdsId,
+        servingSize: logMealDto.servingSize,
+        foodQuery: logMealDto.foodQuery,
         date: new Date().toISOString().split('T')[0],
       },
     });
@@ -36,29 +62,26 @@ export class CaloriesService {
   async getDailyStats(userId: string): Promise<DailyCalorieStatsDto> {
     const today = new Date().toISOString().split('T')[0];
 
-    const todaysMeals = await this.prisma.calorieEntry.findMany({
-      where: {
-        userId,
-        date: today,
-      },
-    });
+    const [todaysMeals, dailyTarget, todaysWorkouts] = await Promise.all([
+      this.prisma.calorieEntry.findMany({
+        where: {
+          userId,
+          date: today,
+        },
+      }),
+      this.prisma.dailyCalorieTarget.findUnique({
+        where: { userId },
+      }),
+      this.prisma.workout.findMany({
+        where: {
+          userId,
+          date: today,
+        },
+      }),
+    ]);
 
     const totalConsumed = todaysMeals.reduce((sum, meal) => sum + meal.calories, 0);
-
-    const dailyTarget = await this.prisma.dailyCalorieTarget.findUnique({
-      where: { userId },
-    });
-
     const targetValue = dailyTarget?.target || 2000;
-
-    // Get workout calories burned today
-    const todaysWorkouts = await this.prisma.workout.findMany({
-      where: {
-        userId,
-        date: today,
-      },
-    });
-
     const totalBurned = todaysWorkouts.reduce((sum, w) => sum + w.caloriesBurned, 0);
 
     const totalProtein = todaysMeals.reduce((sum, meal) => sum + (meal.protein || 0), 0);
@@ -84,9 +107,9 @@ export class CaloriesService {
         timestamp: meal.timestamp.toISOString(),
       })),
       macros: {
-        protein: totalProtein,
-        carbs: totalCarbs,
-        fat: totalFat,
+        protein: Math.round(totalProtein * 10) / 10,
+        carbs: Math.round(totalCarbs * 10) / 10,
+        fat: Math.round(totalFat * 10) / 10,
         proteinPercent: macroTotal > 0 ? Math.round((totalProtein / macroTotal) * 100) : 0,
         carbsPercent: macroTotal > 0 ? Math.round((totalCarbs / macroTotal) * 100) : 0,
         fatPercent: macroTotal > 0 ? Math.round((totalFat / macroTotal) * 100) : 0,
@@ -95,35 +118,53 @@ export class CaloriesService {
   }
 
   async getCalorieHistory(userId: string, days: number = 7) {
-    const history: any[] = [];
     const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - (days - 1));
 
-    const dailyTarget = await this.prisma.dailyCalorieTarget.findUnique({
-      where: { userId },
-    });
+    const [meals, dailyTarget] = await Promise.all([
+      this.prisma.calorieEntry.findMany({
+        where: {
+          userId,
+          date: {
+            gte: startDate.toISOString().split('T')[0],
+            lte: today.toISOString().split('T')[0],
+          },
+        },
+        select: {
+          date: true,
+          calories: true,
+        },
+      }),
+      this.prisma.dailyCalorieTarget.findUnique({
+        where: { userId },
+      }),
+    ]);
 
     const targetValue = dailyTarget?.target || 2000;
+    const mealsByDate = new Map<string, { calories: number; count: number }>();
 
+    meals.forEach((meal) => {
+      const existing = mealsByDate.get(meal.date) || { calories: 0, count: 0 };
+      mealsByDate.set(meal.date, {
+        calories: existing.calories + meal.calories,
+        count: existing.count + 1,
+      });
+    });
+
+    const history = [];
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-
-      const daysMeals = await this.prisma.calorieEntry.findMany({
-        where: {
-          userId,
-          date: dateStr,
-        },
-      });
-
-      const totalConsumed = daysMeals.reduce((sum, meal) => sum + meal.calories, 0);
+      const dayData = mealsByDate.get(dateStr) || { calories: 0, count: 0 };
 
       history.push({
         date: dateStr,
-        totalConsumed,
+        totalConsumed: dayData.calories,
         dailyTarget: targetValue,
-        remaining: Math.max(0, targetValue - totalConsumed),
-        mealCount: daysMeals.length,
+        remaining: Math.max(0, targetValue - dayData.calories),
+        mealCount: dayData.count,
       });
     }
 
@@ -133,6 +174,10 @@ export class CaloriesService {
   async getTotalStats(userId: string) {
     const allMeals = await this.prisma.calorieEntry.findMany({
       where: { userId },
+      select: {
+        calories: true,
+        date: true,
+      },
     });
 
     const totalCalories = allMeals.reduce((sum, meal) => sum + meal.calories, 0);
@@ -167,3 +212,5 @@ export class CaloriesService {
     });
   }
 }
+
+

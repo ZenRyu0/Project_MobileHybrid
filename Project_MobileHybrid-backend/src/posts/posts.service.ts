@@ -198,14 +198,6 @@ export class PostsService {
   }
 
   async getPostComments(postId: string) {
-    const post = await this.prisma.post.findUnique({
-      where: { id: postId },
-    });
-
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-
     return this.prisma.comment.findMany({
       where: { postId },
       include: {

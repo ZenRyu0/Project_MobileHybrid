@@ -13,7 +13,10 @@ export class PostsController {
 
   @Get('feed')
   async getFeed(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-    const feedData = await this.postsService.getFeed(page, limit);
+    const MAX_LIMIT = 100;
+    const validLimit = Math.min(Math.max(1, limit), MAX_LIMIT);
+    const validPage = Math.max(1, page);
+    const feedData = await this.postsService.getFeed(validPage, validLimit);
     return {
       success: true,
       data: feedData,
@@ -36,9 +39,7 @@ export class PostsController {
   ) {
     if (file) {
       const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-      const host = process.env.NODE_ENV === 'production'
-        ? 'go-fit-production-1a8c.up.railway.app'
-        : 'localhost:3000';
+      const host = process.env.FILE_UPLOAD_HOST || 'localhost:3000';
       createPostDto.imageUrl = `${protocol}://${host}/uploads/${file.filename}`;
     }
     const post = await this.postsService.createPost(user.id, createPostDto);

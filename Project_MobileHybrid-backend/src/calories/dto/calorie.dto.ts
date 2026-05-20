@@ -5,31 +5,17 @@ export class LogMealDto {
   mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 
   @IsString()
-  @MaxLength(100)
-  foodName: string;
+  @MaxLength(200)
+  foodQuery: string;
 
   @IsNumber()
-  @Min(0)
-  @Max(5000)
-  calories: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(500)
-  protein?: number;
+  @Min(1)
+  @Max(10000)
+  servingSize: number;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(500)
-  carbs?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(500)
-  fat?: number;
+  @IsString()
+  fdsId?: string;
 }
 
 export class DailyCalorieTargetDto {
@@ -78,4 +64,6 @@ export class MacroBreakdownDto {
   carbsPercent: number;
   fatPercent: number;
 }
+
+
 

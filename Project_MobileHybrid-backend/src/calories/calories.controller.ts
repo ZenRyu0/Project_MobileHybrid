@@ -1,12 +1,32 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, BadRequestException } from '@nestjs/common';
 import { CaloriesService } from './calories.service';
 import { LogMealDto, DailyCalorieTargetDto } from './dto/calorie.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { FoodSearchService } from '../foods/food-search.service';
 
 @Controller('calories')
 export class CaloriesController {
-  constructor(private caloriesService: CaloriesService) {}
+  constructor(
+    private caloriesService: CaloriesService,
+    private foodSearchService: FoodSearchService,
+  ) {}
+
+  @Get('search-foods')
+  async searchFoods(@Query('query') query: string) {
+    if (!query || query.trim().length === 0) {
+      throw new BadRequestException('Query parameter is required and cannot be empty');
+    }
+    if (query.length > 100) {
+      throw new BadRequestException('Query parameter cannot exceed 100 characters');
+    }
+
+    const foods = await this.foodSearchService.searchFoods(query.trim(), 10);
+    return {
+      success: true,
+      data: foods,
+    };
+  }
 
   @Post('log-meal')
   @UseGuards(JwtAuthGuard)
@@ -36,7 +56,8 @@ export class CaloriesController {
   }
 
   @Get('daily-stats/:userId')
-  async getDailyStats(@Param('userId') userId: string) {
+  @UseGuards(JwtAuthGuard)
+  async getDailyStats(@CurrentUser() user: any, @Param('userId') userId: string) {
     const stats = await this.caloriesService.getDailyStats(userId);
     return {
       success: true,
@@ -55,7 +76,9 @@ export class CaloriesController {
   }
 
   @Get('history/:userId')
+  @UseGuards(JwtAuthGuard)
   async getCalorieHistory(
+    @CurrentUser() user: any,
     @Param('userId') userId: string,
   ) {
     const history = await this.caloriesService.getCalorieHistory(userId);
@@ -76,7 +99,8 @@ export class CaloriesController {
   }
 
   @Get('stats/:userId')
-  async getTotalStats(@Param('userId') userId: string) {
+  @UseGuards(JwtAuthGuard)
+  async getTotalStats(@CurrentUser() user: any, @Param('userId') userId: string) {
     const stats = await this.caloriesService.getTotalStats(userId);
     return {
       success: true,
@@ -94,3 +118,5 @@ export class CaloriesController {
     };
   }
 }
+
+

@@ -12,9 +12,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static const String _debugEmail = 'test@example.com';
-  static const String _debugPassword = 'password123';
-
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -33,9 +30,7 @@ class _LoginPageState extends State<LoginPage> {
 
     final auth = context.read<AuthProvider>();
 
-    log("Email: ${_emailController.text}");
-    log("Password: ${_passwordController.text}");
-    log("Mode: ${_isLogin ? 'Login' : 'Register'}");
+    log("Authentication attempt: ${_isLogin ? 'Login' : 'Register'}");
 
     final success = _isLogin
         ? await auth.login(_emailController.text.trim(), _passwordController.text)
@@ -142,18 +137,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                TextButton(
-                  onPressed: auth.isLoading
-                      ? null
-                      : () {
-                          setState(() {
-                            _isLogin = true;
-                            _emailController.text = _debugEmail;
-                            _passwordController.text = _debugPassword;
-                          });
-                        },
-                  child: const Text('Use temporary login credentials'),
-                ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: auth.isLoading ? null : _submitForm,

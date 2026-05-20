@@ -47,7 +47,8 @@ export class WorkoutsController {
   }
 
   @Get('history/:userId')
-  async getUserWorkoutHistory(@Param('userId') userId: string) {
+  @UseGuards(JwtAuthGuard)
+  async getUserWorkoutHistory(@CurrentUser() user: any, @Param('userId') userId: string) {
     const history = await this.workoutsService.getUserWorkoutHistory(userId);
     return {
       success: true,
@@ -66,7 +67,8 @@ export class WorkoutsController {
   }
 
   @Get('stats/:userId')
-  async getWorkoutStats(@Param('userId') userId: string) {
+  @UseGuards(JwtAuthGuard)
+  async getWorkoutStats(@CurrentUser() user: any, @Param('userId') userId: string) {
     const stats = await this.workoutsService.getWorkoutStats(userId);
     return {
       success: true,
