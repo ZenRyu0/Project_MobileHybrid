@@ -1,14 +1,14 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import '../config/api_config.dart';
 
 class WorkoutService {
-  static const String baseUrl = 'https://go-fit-production-1a8c.up.railway.app';
 
   Future<List<dynamic>> getWorkoutPlans() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/workouts/plans'),
+        Uri.parse('${ApiConfig.baseUrl}/workouts/plans'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -28,7 +28,7 @@ class WorkoutService {
   Future<Map<String, dynamic>?> getWorkoutPlanById(String id) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/workouts/plans/$id'),
+        Uri.parse('${ApiConfig.baseUrl}/workouts/plans/$id'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -55,7 +55,7 @@ class WorkoutService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/workouts/log'),
+        Uri.parse('${ApiConfig.baseUrl}/workouts/log'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'userId': userId,
@@ -77,7 +77,7 @@ class WorkoutService {
   Future<List<dynamic>> getWorkoutHistory(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/workouts/history/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/workouts/history/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -97,7 +97,7 @@ class WorkoutService {
   Future<Map<String, dynamic>?> getWorkoutStats(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/workouts/stats/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/workouts/stats/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -123,7 +123,7 @@ class WorkoutService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/workouts/plans'),
+        Uri.parse('${ApiConfig.baseUrl}/workouts/plans'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': name,

@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../config/api_config.dart';
 
 class UserService {
-  static const String baseUrl = 'https://go-fit-production-1a8c.up.railway.app';
 
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/users/$userId/profile'),
+        Uri.parse('${ApiConfig.baseUrl}/users/$userId/profile'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -28,7 +28,7 @@ class UserService {
   Future<List<dynamic>> getAllUsers() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/users'),
+        Uri.parse('${ApiConfig.baseUrl}/users'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -53,7 +53,7 @@ class UserService {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/users/$userId/profile'),
+        Uri.parse('${ApiConfig.baseUrl}/users/$userId/profile'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'name': name, 'bio': bio, 'avatar': avatar}),
       );

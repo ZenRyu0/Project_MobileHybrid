@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/food_result.dart';
+import '../config/api_config.dart';
 
 class CalorieService {
-  static const String baseUrl = 'https://go-fit-production-1a8c.up.railway.app';
 
   Future<List<FoodResult>> searchFoods(String query) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/calories/search-foods?query=$query'),
+        Uri.parse('${ApiConfig.baseUrl}/calories/search-foods?query=$query'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -40,7 +40,7 @@ class CalorieService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/calories/log-meal'),
+        Uri.parse('${ApiConfig.baseUrl}/calories/log-meal'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'mealType': mealType,
@@ -64,7 +64,7 @@ class CalorieService {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/calories/target'),
+        Uri.parse('${ApiConfig.baseUrl}/calories/target'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': userId, 'dailyTarget': dailyTarget}),
       );
@@ -79,7 +79,7 @@ class CalorieService {
   Future<Map<String, dynamic>?> getDailyStats(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/calories/daily-stats/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/calories/daily-stats/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -99,7 +99,7 @@ class CalorieService {
   Future<List<dynamic>> getCalorieHistory(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/calories/history/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/calories/history/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -119,7 +119,7 @@ class CalorieService {
   Future<Map<String, dynamic>?> getTotalStats(String userId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/calories/stats/$userId'),
+        Uri.parse('${ApiConfig.baseUrl}/calories/stats/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
