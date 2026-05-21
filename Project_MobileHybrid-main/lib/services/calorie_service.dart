@@ -5,11 +5,15 @@ import '../models/food_result.dart';
 import '../config/api_config.dart';
 
 class CalorieService {
-
-  Future<List<FoodResult>> searchFoods(String query) async {
+  Future<List<FoodResult>> searchFoods(
+    String query, {
+    bool isBranded = false,
+  }) async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/calories/search-foods?query=$query'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/calories/search-foods?query=$query&branded=$isBranded',
+        ),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -18,9 +22,10 @@ class CalorieService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['data'] != null) {
-          final foods = (data['data'] as List<dynamic>)
-              .map((f) => FoodResult.fromJson(f))
-              .toList();
+          final foods =
+              (data['data'] as List<dynamic>)
+                  .map((f) => FoodResult.fromJson(f))
+                  .toList();
           return foods;
         }
       }
@@ -136,4 +141,3 @@ class CalorieService {
     }
   }
 }
-

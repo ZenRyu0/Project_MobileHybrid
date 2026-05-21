@@ -23,8 +23,8 @@ export class FoodSearchService {
     private configService: ConfigService,
   ) {}
 
-  async searchFoods(query: string, limit: number = 10): Promise<FoodNutrition[]> {
-    const cacheKey = `${query}:${limit}`;
+  async searchFoods(query: string, limit: number = 10, isBranded: string = 'false'): Promise<FoodNutrition[]> {
+    const cacheKey = `${query}:${limit}:${isBranded}`;
     const cached = this.cache.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
@@ -40,13 +40,18 @@ export class FoodSearchService {
       );
     }
 
+    const dataTypes = isBranded === 'true' 
+      ? ['Branded']
+      : ['Foundation', 'SR Legacy'];
+
     try {
       const response = await firstValueFrom(
-        this.httpService.get(this.usda_api_url, {
+        this.httpService.get<any>(this.usda_api_url, {
           params: {
             query,
             pageSize: limit,
             api_key: apiKey,
+            dataType: dataTypes,
           },
         }),
       );
@@ -58,7 +63,8 @@ export class FoodSearchService {
 
       this.cache.set(cacheKey, { data: results, timestamp: Date.now() });
       return results;
-    } catch (error) {
+    } catch (e) {
+      const error = e as any;
       const statusCode = error.response?.status;
       const message = error.response?.data?.message || error.message;
 
@@ -94,8 +100,7 @@ export class FoodSearchService {
 
       const getNutrient = (nutrientId: number): number => {
         const nutrient = nutrients.find((n) => n.nutrientId === nutrientId);
-        if (!nutrient?.value) return 0;
-        return this.normalizePerGram(nutrient.value, servingSize);
+        return nutrient?.value || 0;
       };
 
       const calories = getNutrient(1008); // Energy (kcal)
@@ -119,11 +124,6 @@ export class FoodSearchService {
     } catch (error) {
       return null;
     }
-  }
-
-  private normalizePerGram(value: number, servingSize: number): number {
-    if (servingSize <= 0 || value < 0) return 0;
-    return (value / servingSize) * 100;
   }
 }
 

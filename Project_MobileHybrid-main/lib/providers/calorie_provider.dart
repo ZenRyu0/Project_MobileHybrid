@@ -33,7 +33,7 @@ class CalorieProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> searchFoods(String query) async {
+  Future<void> searchFoods(String query, {bool isBranded = false}) async {
     if (query.isEmpty) {
       _foodSearchResults = [];
       notifyListeners();
@@ -44,7 +44,10 @@ class CalorieProvider extends ChangeNotifier {
     _setError('');
 
     try {
-      final results = await _calorieRepository.searchFoods(query);
+      final results = await _calorieRepository.searchFoods(
+        query,
+        isBranded: isBranded,
+      );
       _foodSearchResults = results;
     } catch (e) {
       _setError('Error searching foods: $e');

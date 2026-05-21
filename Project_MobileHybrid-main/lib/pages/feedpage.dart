@@ -5,7 +5,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:provider/provider.dart';
 import '../models/post.dart';
 import '../providers/post_provider.dart';
-import '../providers/auth_provider.dart';
 import 'postdetailpage.dart';
 
 class FeedPage extends StatefulWidget {
@@ -80,7 +79,8 @@ class _MainPostState extends State<FeedPage> {
                 child: TweetPostItem(
                   post: currentPost,
                   onLikeTapped: () {
-                    final userId = '1'; // TODO: Get from AuthProvider when userId is stored
+                    final userId =
+                        '1'; // TODO: Get from AuthProvider when userId is stored
                     if (postData['liked'] == true) {
                       postProvider.unlikePost(
                         postId: postData['id'].toString(),
@@ -215,7 +215,8 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
               ElevatedButton(
                 onPressed: () async {
                   if (contentController.text.isNotEmpty) {
-                    final userId = '1'; // TODO: Get from AuthProvider when userId is stored
+                    final userId =
+                        '1'; // TODO: Get from AuthProvider when userId is stored
                     await context.read<PostProvider>().createPost(
                       userId: userId,
                       content: contentController.text,
@@ -332,10 +333,11 @@ class TweetPostItem extends StatelessWidget {
                           color: Colors.grey[300],
                           child: Center(
                             child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
+                              value:
+                                  loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
                             ),
                           ),
                         );
@@ -369,8 +371,12 @@ class TweetPostItem extends StatelessWidget {
                       post.isSaved ? Icons.bookmark : Icons.bookmark_border,
                       post.saves.toString(),
                       () {
-                        final userId = '1'; // TODO: Get from AuthProvider when userId is stored
-                        context.read<PostProvider>().toggleSave(post.id, userId);
+                        final userId =
+                            '1'; // TODO: Get from AuthProvider when userId is stored
+                        context.read<PostProvider>().toggleSave(
+                          post.id,
+                          userId,
+                        );
                       },
                       Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

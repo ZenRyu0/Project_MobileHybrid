@@ -13,7 +13,7 @@ export class CaloriesController {
   ) {}
 
   @Get('search-foods')
-  async searchFoods(@Query('query') query: string) {
+  async searchFoods(@Query('query') query: string, @Query('branded') branded?: string,) {
     if (!query || query.trim().length === 0) {
       throw new BadRequestException('Query parameter is required and cannot be empty');
     }
@@ -21,7 +21,7 @@ export class CaloriesController {
       throw new BadRequestException('Query parameter cannot exceed 100 characters');
     }
 
-    const foods = await this.foodSearchService.searchFoods(query.trim(), 10);
+    const foods = await this.foodSearchService.searchFoods(query.trim(), 10, branded || 'false');
     return {
       success: true,
       data: foods,

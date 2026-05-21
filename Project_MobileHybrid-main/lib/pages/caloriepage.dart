@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/food_result.dart';
 import '../providers/calorie_provider.dart';
-import '../providers/auth_provider.dart';
 
 class CaloriePage extends StatefulWidget {
   const CaloriePage({super.key});
@@ -19,6 +18,7 @@ class _CaloriePageState extends State<CaloriePage> {
   Timer? _debounceTimer;
   String? _selectedMealType;
   FoodResult? _selectedFood;
+  bool _searchBranded = false;
 
   @override
   void initState() {
@@ -41,7 +41,10 @@ class _CaloriePageState extends State<CaloriePage> {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       if (mounted) {
-        context.read<CalorieProvider>().searchFoods(value);
+        context.read<CalorieProvider>().searchFoods(
+          value,
+          isBranded: _searchBranded,
+        );
       }
     });
   }
@@ -54,203 +57,333 @@ class _CaloriePageState extends State<CaloriePage> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Text('Add $mealType'),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search food (e.g., rice, chicken)',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  context.read<CalorieProvider>().searchFoods('');
-                                  setState(() {});
-                                },
-                              )
-                            : null,
-                      ),
-                      onChanged: (value) {
-                        setState(() {});
-                        _onSearchChanged(value);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Consumer<CalorieProvider>(
-                      builder: (context, provider, _) {
-                        if (provider.isSearching) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: SizedBox(
-                              height: 50,
-                              child: CircularProgressIndicator(),
+      builder:
+          (context) => StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                title: Text('Add $mealType'),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search food (e.g., rice, chicken)',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          );
-                        }
-
-                        if (provider.foodSearchResults.isEmpty && _searchController.text.isNotEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text('No foods found. Try a different search.'),
-                          );
-                        }
-
-                        if (_searchController.text.isEmpty) {
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              'Type to search foods',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          );
-                        }
-
-                        return SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            itemCount: provider.foodSearchResults.length,
-                            itemBuilder: (context, index) {
-                              final food = provider.foodSearchResults[index];
-                              final isSelected = _selectedFood?.id == food.id;
-
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
-                                child: ListTile(
-                                  title: Text(food.description),
-                                  subtitle: Text(
-                                    '${food.caloriesPer100g.toStringAsFixed(0)} kcal/100g • P: ${food.protein.toStringAsFixed(1)}g • C: ${food.carbs.toStringAsFixed(1)}g • F: ${food.fat.toStringAsFixed(1)}g',
-                                    style: const TextStyle(fontSize: 11),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedFood = food;
-                                      _servingSizeController.text = '100';
-                                    });
-                                  },
-                                ),
-                              );
-                            },
+                            suffixIcon:
+                                _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        context
+                                            .read<CalorieProvider>()
+                                            .searchFoods('');
+                                        setState(() {});
+                                      },
+                                    )
+                                    : null,
                           ),
-                        );
-                      },
-                    ),
-                    if (_selectedFood != null) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
+                          onChanged: (value) {
+                            setState(() {});
+                            _onSearchChanged(value);
+                          },
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Serving Size:',
-                                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                                SizedBox(
-                                  width: 60,
-                                  child: TextField(
-                                    controller: _servingSizeController,
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (value) {
-                                      setState(() {});
-                                    },
-                                    decoration: InputDecoration(
-                                      suffix: const Text('g'),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Slider(
-                              value: double.tryParse(_servingSizeController.text) ?? 100,
-                              min: 10,
-                              max: 500,
-                              divisions: 49,
-                              label: '${_servingSizeController.text}g',
-                              onChanged: (value) {
-                                setState(() {
-                                  _servingSizeController.text = value.toStringAsFixed(0);
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            _buildNutritionPreview(
-                                _selectedFood!, double.tryParse(_servingSizeController.text) ?? 100),
-                          ],
-                        ),
-                      ),
-                    ]
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              if (_selectedFood != null)
-                Consumer<CalorieProvider>(
-                  builder: (context, provider, _) {
-                    return ElevatedButton(
-                      onPressed: provider.isLoading
-                          ? null
-                          : () {
-                              final userId = '1'; // TODO: Get from AuthProvider when userId is stored
-                              context.read<CalorieProvider>().logMeal(
-                                    userId: userId,
-                                    mealType: _selectedMealType!,
-                                    foodQuery: _selectedFood!.description,
-                                    servingSize: int.tryParse(_servingSizeController.text) ?? 100,
-                                    fdsId: _selectedFood!.id,
-                                  );
-                              Navigator.pop(context);
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('${_selectedFood!.description} added to $mealType'),
-                                    duration: const Duration(seconds: 2),
-                                  ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SegmentedButton<bool>(
+                            segments: const [
+                              ButtonSegment<bool>(
+                                value: false,
+                                label: Text('Whole Foods'),
+                                icon: Icon(Icons.apple),
+                              ),
+                              ButtonSegment<bool>(
+                                value: true,
+                                label: Text('Branded'),
+                                icon: Icon(Icons.shopping_cart),
+                              ),
+                            ],
+                            selected: {_searchBranded},
+                            onSelectionChanged: (Set<bool> newSelection) {
+                              setState(() {
+                                _searchBranded = newSelection.first;
+                              });
+                              if (_searchController.text.isNotEmpty) {
+                                context.read<CalorieProvider>().searchFoods(
+                                  _searchController.text,
+                                  isBranded: _searchBranded,
                                 );
                               }
                             },
-                      child: provider.isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Save'),
-                    );
-                  },
-                )
-            ],
-          );
-        },
-      ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Consumer<CalorieProvider>(
+                          builder: (context, provider, _) {
+                            if (provider.isSearching) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: SizedBox(
+                                  height: 50,
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            if (provider.foodSearchResults.isEmpty &&
+                                _searchController.text.isNotEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'No foods found. Try a different search.',
+                                ),
+                              );
+                            }
+
+                            if (_searchController.text.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Type to search foods',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              );
+                            }
+
+                            return SizedBox(
+                              height: 200,
+                              child: ListView.builder(
+                                itemCount: provider.foodSearchResults.length,
+                                itemBuilder: (context, index) {
+                                  final food =
+                                      provider.foodSearchResults[index];
+                                  final isSelected =
+                                      _selectedFood?.id == food.id;
+
+                                  return Card(
+                                    elevation: 0,
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    color:
+                                        isSelected
+                                            ? Theme.of(
+                                              context,
+                                            ).colorScheme.primaryContainer
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                                .withValues(alpha: 0.3),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side:
+                                          isSelected
+                                              ? BorderSide(
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
+                                                width: 2,
+                                              )
+                                              : BorderSide.none,
+                                    ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 4,
+                                          ),
+                                      title: Text(
+                                        food.description
+                                            .toLowerCase()
+                                            .replaceAllMapped(
+                                              RegExp(r'\b\w'),
+                                              (match) =>
+                                                  match.group(0)!.toUpperCase(),
+                                            ),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      subtitle: Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 4.0,
+                                        ),
+                                        child: Text(
+                                          '${food.caloriesPer100g.toStringAsFixed(0)} kcal/100g • P: ${food.protein.toStringAsFixed(1)}g • C: ${food.carbs.toStringAsFixed(1)}g • F: ${food.fat.toStringAsFixed(1)}g',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedFood = food;
+                                          _servingSizeController.text = '100';
+                                        });
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                        if (_selectedFood != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Serving Size:',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 75,
+                                      child: TextField(
+                                        controller: _servingSizeController,
+                                        keyboardType: TextInputType.number,
+                                        onChanged: (value) {
+                                          setState(() {});
+                                        },
+                                        decoration: InputDecoration(
+                                          suffixText: 'g',
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Slider(
+                                  value:
+                                      double.tryParse(
+                                        _servingSizeController.text,
+                                      ) ??
+                                      100,
+                                  min: 10,
+                                  max: 500,
+                                  divisions: 49,
+                                  label: '${_servingSizeController.text}g',
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _servingSizeController.text = value
+                                          .toStringAsFixed(0);
+                                    });
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                _buildNutritionPreview(
+                                  _selectedFood!,
+                                  double.tryParse(
+                                        _servingSizeController.text,
+                                      ) ??
+                                      100,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  if (_selectedFood != null)
+                    Consumer<CalorieProvider>(
+                      builder: (context, provider, _) {
+                        return ElevatedButton(
+                          onPressed:
+                              provider.isLoading
+                                  ? null
+                                  : () {
+                                    final userId =
+                                        '1'; // TODO: Get from AuthProvider when userId is stored
+                                    context.read<CalorieProvider>().logMeal(
+                                      userId: userId,
+                                      mealType: _selectedMealType!,
+                                      foodQuery: _selectedFood!.description,
+                                      servingSize:
+                                          int.tryParse(
+                                            _servingSizeController.text,
+                                          ) ??
+                                          100,
+                                      fdsId: _selectedFood!.id,
+                                    );
+                                    Navigator.pop(context);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            '${_selectedFood!.description} added to $mealType',
+                                          ),
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  },
+                          child:
+                              provider.isLoading
+                                  ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Text('Save'),
+                        );
+                      },
+                    ),
+                ],
+              );
+            },
+          ),
     );
   }
 
@@ -264,7 +397,10 @@ class _CaloriePageState extends State<CaloriePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Estimated Nutrition:', style: Theme.of(context).textTheme.labelSmall),
+        Text(
+          'Estimated Nutrition:',
+          style: Theme.of(context).textTheme.labelSmall,
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -283,7 +419,7 @@ class _CaloriePageState extends State<CaloriePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -307,7 +443,8 @@ class _CaloriePageState extends State<CaloriePage> {
 
         return RefreshIndicator(
           onRefresh: () {
-            final userId = '1'; // TODO: Get from AuthProvider when userId is stored
+            final userId =
+                '1'; // TODO: Get from AuthProvider when userId is stored
             return calorieProvider.fetchDailyStats(userId);
           },
           child: ListView(
@@ -325,16 +462,33 @@ class _CaloriePageState extends State<CaloriePage> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              _buildMealCard('Breakfast', _getMealCalories(dailyStats, 'Breakfast'), Icons.breakfast_dining,
-                  () => _showFoodSearchDialog('Breakfast')),
-              _buildMealCard('Lunch', _getMealCalories(dailyStats, 'Lunch'), Icons.lunch_dining,
-                  () => _showFoodSearchDialog('Lunch')),
-              _buildMealCard('Dinner', _getMealCalories(dailyStats, 'Dinner'), Icons.dinner_dining,
-                  () => _showFoodSearchDialog('Dinner')),
-              _buildMealCard('Snack', _getMealCalories(dailyStats, 'Snack'), Icons.fastfood,
-                  () => _showFoodSearchDialog('Snack')),
+              _buildMealCard(
+                'Breakfast',
+                _getMealCalories(dailyStats, 'Breakfast'),
+                Icons.breakfast_dining,
+                () => _showFoodSearchDialog('Breakfast'),
+              ),
+              _buildMealCard(
+                'Lunch',
+                _getMealCalories(dailyStats, 'Lunch'),
+                Icons.lunch_dining,
+                () => _showFoodSearchDialog('Lunch'),
+              ),
+              _buildMealCard(
+                'Dinner',
+                _getMealCalories(dailyStats, 'Dinner'),
+                Icons.dinner_dining,
+                () => _showFoodSearchDialog('Dinner'),
+              ),
+              _buildMealCard(
+                'Snack',
+                _getMealCalories(dailyStats, 'Snack'),
+                Icons.fastfood,
+                () => _showFoodSearchDialog('Snack'),
+              ),
               const SizedBox(height: 24),
-              if ((dailyStats['meals'] as List<dynamic>?)?.isNotEmpty ?? false) ...[
+              if ((dailyStats['meals'] as List<dynamic>?)?.isNotEmpty ??
+                  false) ...[
                 const Text(
                   'Today\'s Meals',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -348,13 +502,13 @@ class _CaloriePageState extends State<CaloriePage> {
                     child: Text(
                       'No meals logged yet. Add a meal to get started!',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                )
-              ]
+                ),
+              ],
             ],
           ),
         );
@@ -362,7 +516,12 @@ class _CaloriePageState extends State<CaloriePage> {
     );
   }
 
-  Widget _buildCalorieSummary(BuildContext context, int totalCals, int targetCals, Map<String, dynamic> dailyStats) {
+  Widget _buildCalorieSummary(
+    BuildContext context,
+    int totalCals,
+    int targetCals,
+    Map<String, dynamic> dailyStats,
+  ) {
     double progress = (totalCals / targetCals).clamp(0.0, 1.0);
     final macros = dailyStats['macros'] as Map<String, dynamic>? ?? {};
     int carbs = (macros['carbs'] as num?)?.toInt() ?? 0;
@@ -382,37 +541,52 @@ class _CaloriePageState extends State<CaloriePage> {
                   alignment: Alignment.center,
                   children: [
                     SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween<double>(begin: 0.0, end: progress),
-                        duration: const Duration(milliseconds: 800),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, animatedValue, child) {
-                          return CircularProgressIndicator(
-                            value: animatedValue,
-                            strokeWidth: 10,
-                            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            color: Theme.of(context).colorScheme.primary,
-                          );
-                        },
-                      ),
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '$totalCals',
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                      width:
+                          130, // Slightly larger than the circle to prevent clipping
+                      height: 130,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // The Progress Circle (120x120)
+                          SizedBox(
+                            width: 120,
+                            height: 120,
+                            child: TweenAnimationBuilder<double>(
+                              tween: Tween<double>(begin: 0.0, end: progress),
+                              duration: const Duration(milliseconds: 800),
+                              curve: Curves.easeOutCubic,
+                              builder: (context, animatedValue, child) {
+                                return CircularProgressIndicator(
+                                  value: animatedValue,
+                                  strokeWidth: 10,
+                                  backgroundColor:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                  color: Theme.of(context).colorScheme.primary,
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        Text(
-                          'Kcal Eaten',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '$totalCals',
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Kcal Eaten',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -423,8 +597,8 @@ class _CaloriePageState extends State<CaloriePage> {
             Text(
               'Goal: $targetCals kcal',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -455,7 +629,11 @@ class _CaloriePageState extends State<CaloriePage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 32),
+        leading: Icon(
+          icon,
+          color: Theme.of(context).colorScheme.primary,
+          size: 32,
+        ),
         title: Text(
           title,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -465,7 +643,11 @@ class _CaloriePageState extends State<CaloriePage> {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         trailing: IconButton(
-          icon: Icon(Icons.add_circle, color: Theme.of(context).colorScheme.primary, size: 32),
+          icon: Icon(
+            Icons.add_circle,
+            color: Theme.of(context).colorScheme.primary,
+            size: 32,
+          ),
           onPressed: onAddTapped,
         ),
       ),
@@ -478,26 +660,30 @@ class _CaloriePageState extends State<CaloriePage> {
     }
 
     return Column(
-      children: meals.map<Widget>((meal) {
-        if (meal == null) return const SizedBox.shrink();
+      children:
+          meals.map<Widget>((meal) {
+            if (meal == null) return const SizedBox.shrink();
 
-        final foodName = meal['foodName'] ?? 'Unknown Food';
-        final calories = meal['calories'] ?? 0;
-        final mealType = meal['mealType'] ?? '';
+            final foodName = meal['foodName'] ?? 'Unknown Food';
+            final calories = meal['calories'] ?? 0;
+            final mealType = meal['mealType'] ?? '';
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            title: Text(foodName),
-            subtitle: Text('$calories kcal'),
-            trailing: Text(
-              mealType,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-        );
-      }).toList(),
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                title: Text(foodName),
+                subtitle: Text('$calories kcal'),
+                trailing: Text(
+                  mealType,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            );
+          }).toList(),
     );
   }
 
@@ -516,4 +702,3 @@ class _CaloriePageState extends State<CaloriePage> {
     }
   }
 }
-

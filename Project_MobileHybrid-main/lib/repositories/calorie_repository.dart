@@ -6,8 +6,8 @@ class CalorieRepository {
 
   CalorieRepository(this._calorieService);
 
-  Future<List<FoodResult>> searchFoods(String query) {
-    return _calorieService.searchFoods(query);
+  Future<List<FoodResult>> searchFoods(String query, {bool isBranded = false}) {
+    return _calorieService.searchFoods(query, isBranded: isBranded);
   }
 
   Future<bool> logMeal({
