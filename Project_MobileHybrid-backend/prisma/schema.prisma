@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // User model for authentication
@@ -29,7 +30,6 @@ model User {
   posts                 Post[]
   comments              Comment[]
   postLikes             PostLike[]
-  savedPosts            PostSave[]
 
   @@index([email])
   @@index([createdAt])
@@ -119,7 +119,6 @@ model Post {
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments              Comment[]
   likes                 PostLike[]
-  saves                 PostSave[]
 
   @@index([userId])
   @@index([createdAt])
@@ -143,21 +142,6 @@ model Comment {
 
 // Many-to-many relationship for post likes
 model PostLike {
-  id                    String                 @id @default(uuid())
-  userId                String
-  postId                String
-  createdAt             DateTime               @default(now())
-
-  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post                  Post                   @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, postId])
-  @@index([userId])
-  @@index([postId])
-}
-
-// Many-to-many relationship for post saves/bookmarks
-model PostSave {
   id                    String                 @id @default(uuid())
   userId                String
   postId                String

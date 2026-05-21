@@ -12,9 +12,12 @@ async function bootstrap() {
 
   app.enableCors({
     origin: process.env.NODE_ENV === 'production'
-      ? ['https://go-fit-frontend.netlify.app']
+      ? ['https://go-fit-frontend.netlify.app', 'https://gofit.netlify.app']
       : '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
+    optionsSuccessStatus: 200,
   });
 
   // Apply auth-specific rate limiting to auth endpoints
