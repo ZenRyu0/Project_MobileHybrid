@@ -43,7 +43,7 @@ class PostService {
         );
       }
       var response = await request.send().timeout(timeout);
-      return response.statusCode == 201;
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Create post error: $e');
       return false;
@@ -137,7 +137,7 @@ class PostService {
         }),
       ).timeout(timeout);
 
-      return response.statusCode == 201;
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Add comment error: $e');
       return false;

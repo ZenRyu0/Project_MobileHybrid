@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, Query, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, UseInterceptors, UploadedFile, UseGuards, HttpCode } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -60,6 +60,7 @@ export class PostsController {
   }
 
   @Post(':id/like')
+  @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   async likePost(@CurrentUser() user: any, @Param('id') postId: string) {
     const post = await this.postsService.likePost(postId, user.id);
@@ -70,9 +71,32 @@ export class PostsController {
   }
 
   @Post(':id/unlike')
+  @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   async unlikePost(@CurrentUser() user: any, @Param('id') postId: string) {
     const post = await this.postsService.unlikePost(postId, user.id);
+    return {
+      success: true,
+      data: post,
+    };
+  }
+
+  @Post(':id/save')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async savePost(@CurrentUser() user: any, @Param('id') postId: string) {
+    const post = await this.postsService.savePost(postId, user.id);
+    return {
+      success: true,
+      data: post,
+    };
+  }
+
+  @Post(':id/unsave')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async unsavePost(@CurrentUser() user: any, @Param('id') postId: string) {
+    const post = await this.postsService.unsavePost(postId, user.id);
     return {
       success: true,
       data: post,

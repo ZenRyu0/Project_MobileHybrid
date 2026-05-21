@@ -58,6 +58,10 @@ export class PrismaService implements OnModuleInit {
     return this.client.postLike;
   }
 
+  get postSave() {
+    return this.client.postSave;
+  }
+
   get $connect() {
     return this.client.$connect.bind(this.client);
   }

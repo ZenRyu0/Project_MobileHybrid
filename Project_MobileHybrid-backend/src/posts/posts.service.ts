@@ -249,4 +249,54 @@ export class PostsService {
       where: { id },
     });
   }
+
+  async savePost(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    await this.prisma.postSave.upsert({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+      update: {},
+      create: {
+        userId,
+        postId,
+      },
+    });
+
+    return this.getPostById(postId);
+  }
+
+  async unsavePost(postId: string, userId: string) {
+    const save = await this.prisma.postSave.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (save) {
+      await this.prisma.postSave.delete({
+        where: {
+          userId_postId: {
+            userId,
+            postId,
+          },
+        },
+      });
+    }
+
+    return this.getPostById(postId);
+  }
 }

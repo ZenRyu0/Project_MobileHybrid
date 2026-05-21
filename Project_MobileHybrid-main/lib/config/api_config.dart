@@ -1,7 +1,7 @@
 class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:3000',
+    defaultValue: 'https://go-fit-production-1a8c.up.railway.app/',
   );
 
   static const Duration timeout = Duration(seconds: 30);

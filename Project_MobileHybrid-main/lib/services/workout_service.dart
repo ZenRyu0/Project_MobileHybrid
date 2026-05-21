@@ -67,7 +67,7 @@ class WorkoutService {
         }),
       );
 
-      return response.statusCode == 201;
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Log workout error: $e');
       return false;
@@ -135,7 +135,7 @@ class WorkoutService {
         }),
       );
 
-      return response.statusCode == 201;
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Create workout plan error: $e');
       return false;
