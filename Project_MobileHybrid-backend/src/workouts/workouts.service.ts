@@ -1,0 +1,99 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateWorkoutDto, CreateWorkoutPlanDto, WorkoutPlanDto } from './dto/workout.dto';
+import { PrismaService } from '../database/prisma.service';
+@Injectable()
+export class WorkoutsService {
+  constructor(private prisma: PrismaService) {}
+  async getWorkoutPlans(userId?: string): Promise<WorkoutPlanDto[]> {
+    const plans = await this.prisma.workoutPlan.findMany({
+      where: userId
+        ? { OR: [{ userId: null }, { userId }] }
+        : { userId: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    return plans.map((plan) => ({
+      ...plan,
+      exercises: (Array.isArray(plan.exercises) ? plan.exercises : []) as any[],
+    }));
+  }
+  async getWorkoutPlanById(id: string): Promise<WorkoutPlanDto> {
+    const plan = await this.prisma.workoutPlan.findUnique({
+      where: { id },
+    });
+    if (!plan) {
+      throw new NotFoundException('Workout plan not found');
+    }
+    return {
+      ...plan,
+      exercises: (Array.isArray(plan.exercises) ? plan.exercises : []) as any[],
+    };
+  }
+  async logWorkout(userId: string, createWorkoutDto: CreateWorkoutDto) {
+    return this.prisma.workout.create({
+      data: {
+        name: createWorkoutDto.name,
+        duration: createWorkoutDto.duration,
+        caloriesBurned: createWorkoutDto.caloriesBurned,
+        difficulty: createWorkoutDto.difficulty || 'Intermediate',
+        notes: createWorkoutDto.notes,
+        userId,
+        date: new Date().toISOString().split('T')[0],
+      },
+    });
+  }
+  async getUserWorkoutHistory(userId: string) {
+    return this.prisma.workout.findMany({
+      where: { userId },
+      orderBy: { date: 'desc' },
+    });
+  }
+  async getWorkoutStats(userId: string) {
+    const stats = await this.prisma.workout.aggregate({
+      where: { userId },
+      _count: true,
+      _sum: { caloriesBurned: true, duration: true },
+    });
+    const totalWorkouts = stats._count;
+    const totalCalories = stats._sum.caloriesBurned || 0;
+    const totalDuration = stats._sum.duration || 0;
+    return {
+      totalWorkouts,
+      totalCaloriesBurned: totalCalories,
+      totalDuration,
+      averageCaloriesPerWorkout:
+        totalWorkouts > 0 ? Math.round(totalCalories / totalWorkouts) : 0,
+    };
+  }
+  async createWorkoutPlan(
+    createWorkoutPlanDto: CreateWorkoutPlanDto,
+    userId?: string,
+  ): Promise<WorkoutPlanDto> {
+    const plan = await this.prisma.workoutPlan.create({
+      data: {
+        name: createWorkoutPlanDto.name,
+        duration: createWorkoutPlanDto.duration,
+        difficulty: createWorkoutPlanDto.difficulty,
+        description: createWorkoutPlanDto.description || '',
+        caloriesBurned: createWorkoutPlanDto.duration * 5,
+        exercises: createWorkoutPlanDto.exercises || [],
+        isCustom: !!userId,
+        userId,
+      },
+    });
+    return {
+      ...plan,
+      exercises: (Array.isArray(plan.exercises) ? plan.exercises : []) as any[],
+    };
+  }
+  async deleteWorkout(id: string, userId: string) {
+    const workout = await this.prisma.workout.findUnique({
+      where: { id },
+    });
+    if (!workout || workout.userId !== userId) {
+      throw new NotFoundException('Workout not found');
+    }
+    return this.prisma.workout.delete({
+      where: { id },
+    });
+  }
+}
